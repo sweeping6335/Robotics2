@@ -116,9 +116,11 @@ from vex import *
 
 # Begin project code
 distimer = 2
+Arm_1.set_max_torque(100,PERCENT)
+Arm_2.set_max_torque(100,PERCENT)
+Arm_1.set_velocity(100,PERCENT)
+Arm_2.set_velocity(100,PERCENT)
 def Arm_Spin():
-    Arm_1.set_max_torque(100,PERCENT)
-    Arm_2.set_max_torque(100,PERCENT)
     Arm_1.spin(FORWARD)
     Arm_2.spin(FORWARD)
 
