@@ -6,12 +6,21 @@ import urandom
 brain=Brain()
 
 # Robot configuration code
-left_drive_smart = Motor(Ports.PORT1, GearSetting.RATIO_18_1, False)
-right_drive_smart = Motor(Ports.PORT10, GearSetting.RATIO_18_1, True)
-drivetrain = DriveTrain(left_drive_smart, right_drive_smart, 319.19, 295, 40, MM, 1)
-Arm_1 = Motor(Ports.PORT11, GearSetting.RATIO_18_1, False)
+Arm_1 = Motor(Ports.PORT11, GearSetting.RATIO_18_1, True)
 Arm_2 = Motor(Ports.PORT12, GearSetting.RATIO_18_1, False)
 controller_1 = Controller(PRIMARY)
+Back_Bumper = Bumper(brain.three_wire_port.h)
+Front_Bumper = Bumper(brain.three_wire_port.g)
+left_motor_a = Motor(Ports.PORT9, GearSetting.RATIO_18_1, False)
+left_motor_b = Motor(Ports.PORT10, GearSetting.RATIO_18_1, False)
+left_drive_smart = MotorGroup(left_motor_a, left_motor_b)
+right_motor_a = Motor(Ports.PORT1, GearSetting.RATIO_18_1, True)
+right_motor_b = Motor(Ports.PORT2, GearSetting.RATIO_18_1, True)
+right_drive_smart = MotorGroup(right_motor_a, right_motor_b)
+drivetrain = DriveTrain(left_drive_smart, right_drive_smart, 319.19, 295, 40, MM, 1)
+front_sensor1 = Distance(Ports.PORT13)
+Sonic = Sonar(brain.three_wire_port.a)
+front_sensor = Distance(Ports.PORT14)
 
 
 # wait for rotation sensor to fully initialize
@@ -115,16 +124,30 @@ rc_auto_loop_thread_controller_1 = Thread(rc_auto_loop_function_controller_1)
 from vex import *
 
 # Begin project code
-distimer = 2
+drivetrain.set_turn_velocity(100,PERCENT)
+drivetrain.set_drive_velocity(100,PERCENT)
+dis_timer = 2
+brain.screen.set_font(FontType.PROP40)
+
+
+
 Arm_1.set_max_torque(100,PERCENT)
 Arm_2.set_max_torque(100,PERCENT)
-Arm_1.set_velocity(100,PERCENT)
 Arm_2.set_velocity(100,PERCENT)
+Arm_1.set_velocity(100,PERCENT)
 def Arm_Spin():
     Arm_1.spin(FORWARD)
     Arm_2.spin(FORWARD)
 
 def Arm_Stop():
+    Arm_1.stop()
+    Arm_2.stop()
+    
+def Down_Spin():
+    Arm_1.spin(REVERSE)
+    Arm_2.spin(REVERSE)
+
+def Down_Stop():
     Arm_1.stop()
     Arm_2.stop()
 
@@ -134,10 +157,6 @@ def freeze_bot():
     brain.screen.set_fill_color(Color.RED)
     brain.screen.draw_rectangle(0,0,479,239)
     drivetrain.stop()
-    Wheel.stop()
-    Right_Spinner.stop()
-    Left_Spinner.stop()
-    Top_Spinner.stop()
     brain.screen.set_font(FontType.PROP60)
     brain.screen.set_cursor(2.5,8.5)
     brain.screen.print(dis_timer)
@@ -148,8 +167,27 @@ def freeze_bot():
     brain.screen.draw_rectangle(0,0,479,239)
     dis_timer = dis_timer * 2
 
+def Fsensor():
+    brain.screen.set_font(FontType.PROP30)
+    while brain.battery.capacity():
+        brain.screen.set_cursor(1,1)
+        brain.screen.print(front_sensor.object_distance(MM))
+        wait(0.1,SECONDS)
+        brain.screen.clear_row(1)
+        brain.screen.set_cursor(2,1)
+        brain.screen.print(front_sensor.object_size())
+        brain.screen.set_cursor(3,1)
+        brain.screen.print(front_sensor.object_velocity())
+        brain.screen.set_cursor(4,1)
+        brain.screen.print(Sonic.distance(MM))
+        
+    
+
 
 controller_1.buttonR1.pressed(Arm_Spin)
 Back_Bumper.pressed(freeze_bot)
 Front_Bumper.pressed(freeze_bot)
 controller_1.buttonR1.released(Arm_Stop)
+controller_1.buttonR2.pressed(Down_Spin)
+controller_1.buttonR2.released(Down_Stop)
+controller_1.buttonB.pressed(Fsensor)
