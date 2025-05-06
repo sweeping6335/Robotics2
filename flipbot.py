@@ -180,6 +180,16 @@ def Fsensor():
         brain.screen.print(front_sensor.object_velocity())
         brain.screen.set_cursor(4,1)
         brain.screen.print(Sonic.distance(MM))
+
+def auto_flip():
+    drivetrain.set_turn_velocity(50,PERCENT)
+    drivetrain.turn(RIGHT)
+    while not front_sensor.is_object_detected():
+        drivetrain.drive(FORWARD)
+
+    
+def kill():
+    brain.program_stop()
         
     
 
@@ -191,3 +201,5 @@ controller_1.buttonR1.released(Arm_Stop)
 controller_1.buttonR2.pressed(Down_Spin)
 controller_1.buttonR2.released(Down_Stop)
 controller_1.buttonB.pressed(Fsensor)
+controller_1.buttonDown.pressed(auto_flip)
+controller_1.buttonUp.pressed(kill)
