@@ -6,8 +6,6 @@ import urandom
 brain=Brain()
 
 # Robot configuration code
-Arm_1 = Motor(Ports.PORT11, GearSetting.RATIO_18_1, True)
-Arm_2 = Motor(Ports.PORT12, GearSetting.RATIO_18_1, False)
 controller_1 = Controller(PRIMARY)
 Back_Bumper = Bumper(brain.three_wire_port.h)
 Front_Bumper = Bumper(brain.three_wire_port.g)
@@ -18,9 +16,11 @@ right_motor_a = Motor(Ports.PORT1, GearSetting.RATIO_18_1, True)
 right_motor_b = Motor(Ports.PORT2, GearSetting.RATIO_18_1, True)
 right_drive_smart = MotorGroup(right_motor_a, right_motor_b)
 drivetrain = DriveTrain(left_drive_smart, right_drive_smart, 319.19, 295, 40, MM, 1)
-front_sensor1 = Distance(Ports.PORT13)
 Sonic = Sonar(brain.three_wire_port.a)
 front_sensor = Distance(Ports.PORT14)
+Armm_motor_a = Motor(Ports.PORT11, GearSetting.RATIO_18_1, True)
+Armm_motor_b = Motor(Ports.PORT12, GearSetting.RATIO_18_1, False)
+Armm = MotorGroup(Armm_motor_a, Armm_motor_b)
 
 
 # wait for rotation sensor to fully initialize
@@ -124,32 +124,30 @@ rc_auto_loop_thread_controller_1 = Thread(rc_auto_loop_function_controller_1)
 from vex import *
 
 # Begin project code
-drivetrain.set_turn_velocity(100,PERCENT)
+myVariable = 0
+FOUNDBOT = Event()
+message1 = Event()
+NOBOT = Event()
+ready_to_flip = Event()
+drivetrain.set_turn_velocity(30,PERCENT)
 drivetrain.set_drive_velocity(100,PERCENT)
 dis_timer = 2
 brain.screen.set_font(FontType.PROP40)
 
 
 
-Arm_1.set_max_torque(100,PERCENT)
-Arm_2.set_max_torque(100,PERCENT)
-Arm_2.set_velocity(100,PERCENT)
-Arm_1.set_velocity(100,PERCENT)
+Armm.set_max_torque(100,PERCENT)
 def Arm_Spin():
-    Arm_1.spin(FORWARD)
-    Arm_2.spin(FORWARD)
+    Armm.spin(FORWARD)
 
 def Arm_Stop():
-    Arm_1.stop()
-    Arm_2.stop()
+    Armm.stop()
     
 def Down_Spin():
-    Arm_1.spin(REVERSE)
-    Arm_2.spin(REVERSE)
+    Armm.spin(REVERSE)
 
 def Down_Stop():
-    Arm_1.stop()
-    Arm_2.stop()
+    Armm.stop()
 
 def freeze_bot():
     global myVariable, dis_timer
@@ -181,18 +179,48 @@ def Fsensor():
         brain.screen.set_cursor(4,1)
         brain.screen.print(Sonic.distance(MM))
 
-def auto_flip():
-    drivetrain.set_turn_velocity(50,PERCENT)
-    drivetrain.turn(RIGHT)
+def seek_bot():
+    global myVariable, FOUNDBOT, message1, NOBOT, ready_to_flip
     while not front_sensor.is_object_detected():
+        drivetrain.turn(RIGHT)
+        wait(0.01, SECONDS)
+        wait(5, MSEC)
+    while not front_sensor.object_distance(MM) < 300:
         drivetrain.drive(FORWARD)
-
+        wait(0.01, SECONDS)
+        wait(5, MSEC)
+    wait(0.5,SECONDS)
+    ready_to_flip.broadcast()
     
-def kill():
+
+def when_started1():
+    global myVariable, FOUNDBOT, message1, NOBOT, ready_to_flip
+    drivetrain.set_drive_velocity(100, PERCENT)
+    drivetrain.set_turn_velocity(20, PERCENT)
+    while not controller_1.buttonUp.pressing():
+        wait(5, MSEC)
+    seek_bot()
+
+def onevent_controller_1buttonDown_pressed_0():
+    global myVariable, FOUNDBOT, message1, NOBOT, ready_to_flip
     brain.program_stop()
-        
-    
 
+def onevent_ready_to_flip_0():
+    global myVariable, FOUNDBOT, message1, NOBOT, ready_to_flip
+    for repeat_count in range(5):
+        Armm.spin_for(FORWARD, 270, DEGREES)
+        wait(0.01, SECONDS)
+        Armm.spin_for(REVERSE, 270, DEGREES)
+        wait(0.01, SECONDS)
+        wait(5, MSEC)
+
+def onevent_ready_to_flip_1():
+    global myVariable, FOUNDBOT, message1, NOBOT, ready_to_flip
+    drivetrain.drive(FORWARD)
+
+
+def kill_smth():
+    global myVariable, FOUNDBOT, message1, NOBOT, ready_to_flip
 
 controller_1.buttonR1.pressed(Arm_Spin)
 Back_Bumper.pressed(freeze_bot)
@@ -201,5 +229,8 @@ controller_1.buttonR1.released(Arm_Stop)
 controller_1.buttonR2.pressed(Down_Spin)
 controller_1.buttonR2.released(Down_Stop)
 controller_1.buttonB.pressed(Fsensor)
-controller_1.buttonDown.pressed(auto_flip)
-controller_1.buttonUp.pressed(kill)
+controller_1.buttonDown.pressed(onevent_controller_1buttonDown_pressed_0)
+ready_to_flip(onevent_ready_to_flip_0)
+ready_to_flip(onevent_ready_to_flip_1)
+controller_1.buttonRight.pressed(when_started1)
+controller_1.buttonLeft.pressed(kill_smth)
