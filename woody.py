@@ -21,6 +21,7 @@ front_sensor = Distance(Ports.PORT14)
 Armm_motor_a = Motor(Ports.PORT11, GearSetting.RATIO_18_1, True)
 Armm_motor_b = Motor(Ports.PORT12, GearSetting.RATIO_18_1, False)
 Armm = MotorGroup(Armm_motor_a, Armm_motor_b)
+optical_3 = Optical(Ports.PORT3)
 
 
 # wait for rotation sensor to fully initialize
@@ -191,7 +192,6 @@ def seek_bot():
         wait(5, MSEC)
     wait(0.5,SECONDS)
     ready_to_flip.broadcast()
-    
 
 def when_started1():
     global myVariable, FOUNDBOT, message1, NOBOT, ready_to_flip
@@ -207,15 +207,18 @@ def onevent_controller_1buttonDown_pressed_0():
 
 def onevent_ready_to_flip_0():
     global myVariable, FOUNDBOT, message1, NOBOT, ready_to_flip
-    for repeat_count in range(5):
-        Armm.spin_for(FORWARD, 270, DEGREES)
-        wait(0.01, SECONDS)
-        Armm.spin_for(REVERSE, 270, DEGREES)
-        wait(0.01, SECONDS)
-        wait(5, MSEC)
-
+    drivetrain.set_drive_velocity(50,PERCENT)
+    if optical_3.hue() >150:
+            drivetrain.turn_for(RIGHT,180,DEGREES)
+            drivetrain.drive_for(FORWARD,100,MM)
+    else:
+        for repeat_count in range(5):
+            Armm.spin_for(FORWARD, 270, DEGREES)
+            wait(0.01, SECONDS)
+            Armm.spin_for(REVERSE, 270, DEGREES)
+            wait(5, MSEC)
 def onevent_ready_to_flip_1():
-    global myVariable, FOUNDBOT, message1, NOBOT, ready_to_flip
+    drivetrain.set_drive_velocity(50,PERCENT)
     drivetrain.drive(FORWARD)
 
 
@@ -234,3 +237,4 @@ ready_to_flip(onevent_ready_to_flip_0)
 ready_to_flip(onevent_ready_to_flip_1)
 controller_1.buttonRight.pressed(when_started1)
 controller_1.buttonLeft.pressed(kill_smth)
+
